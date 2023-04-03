@@ -3,9 +3,9 @@
 This provides an example of how to use the AWS IoT MQTT Client on Android to connect to AWS IoT using mutual TLS authentication by using Android Keystore.
 
 ### Scenario
-1, Automated certificate registration using AWS IoT Just In time Registration.
-2, Protect the private key in the Android Keystore and never retrieve and process the private key itself.
-3, Provide an interface that can be provisioned to sign with a self-certificate authority and write the certificate back to the device.
+1, Automated certificate registration using AWS IoT Just In time Registration.  
+2, Protect the private key in the Android Keystore and never retrieve and process the private key itself.  
+3, Provide an interface that can be provisioned to sign with a self-certificate authority and write the certificate back to the device.  
 
 ### Prerequisites
 Android Studio Electric Eel (1.0.0) or later
