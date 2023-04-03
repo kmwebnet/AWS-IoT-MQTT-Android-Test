@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <group android:checkableBehavior="single">
+    <item
+        android:icon="@drawable/baseline_developer_mode_24"
+        android:id="@+id/menu_certificate_provisioning"
+        android:title="Certificate Provisioning" />
+    <item
+        android:icon="@drawable/baseline_cloud_sync_24"
+        android:id="@+id/menu_mqtt_connection"
+        android:title="MQTT Connection" />
+    </group>
+</menu>

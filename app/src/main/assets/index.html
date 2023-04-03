@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Android Provisioning web app</title>
+    <script>/*<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+*/</script>
+    <link rel="stylesheet" href="material.indigo-pink.min.css">
+    <script defer src="material-min.js"></script>
+    <script src="jquery-min.js"></script>
+    <style>
+        body {
+            background-image: linear-gradient(135deg, #f5f7fa 0%, #e4eef9 100%);
+        }
+
+        .appbar {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            background-image: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%);
+            padding: 20px;
+            color: #fff;
+            border-radius: 4px;
+            font-size: 24px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .appbar-title {
+            margin: 0;
+            font-weight: bold;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .mdl-textfield {
+            background-color: #fff;
+            width: 80%;
+            align-items: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .mdl-button {
+            width: 200px;
+            background-image: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%);
+            color: white;
+            padding: 10px;
+            border: none;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 4px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .mdl-textfield__input {
+            height: auto !important;
+            width: 100%;
+            align-items: center;
+        }
+
+        .mdl-textfield__label {
+            color: black;
+            transition: transform 0.2s ease;
+        }
+
+        .mdl-textfield__input:focus~.mdl-textfield__label,
+        .mdl-textfield__input:not(:placeholder-shown)~.mdl-textfield__label {
+            transform: translateY(-25px);
+        }
+
+        .snackbar {
+            visibility: hidden;
+            min-width: 250px;
+            max-width: 80%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 2px;
+            padding: 16px;
+            position: fixed;
+            z-index: 1;
+            left: 50%;
+            bottom: 30px;
+            font-size: 17px;
+            /* シャドウ */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .snackbar.show {
+            visibility: visible;
+            -webkit-animation: fadein 0.5s, fadeout 0.5s 4.5s;
+            animation: fadein 0.5s, fadeout 0.5s 4.5s;
+        }
+
+        @-webkit-keyframes fadein {
+            from {
+                bottom: 0;
+                opacity: 0;
+            }
+
+            to {
+                bottom: 30px;
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadein {
+            from {
+                bottom: 0;
+                opacity: 0;
+            }
+
+            to {
+                bottom: 30px;
+                opacity: 1;
+            }
+        }
+
+        @-webkit-keyframes fadeout {
+            from {
+                bottom: 30px;
+                opacity: 1;
+            }
+
+            to {
+                bottom: 0;
+                opacity: 0;
+            }
+        }
+
+        @keyframes fadeout {
+            from {
+                bottom: 30px;
+                opacity: 1;
+            }
+
+            to {
+                bottom: 0;
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header class="appbar">
+        <h1 class="appbar-title">Certificate Provisioning</h1>
+    </header>
+    <div class="container">
+        <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+            <textarea class="mdl-textfield__input" type="text" cols="40" rows="10" id="public-key" readonly></textarea>
+            <label class="mdl-textfield__label" for="public-key">Certificate request(CSR)</label>
+        </div>
+        <button id="generate-btn"
+            class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--accent">
+            Generate
+        </button>
+
+        <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+            <textarea class="mdl-textfield__input" type="text" cols="40" rows="20" id="certificate"></textarea>
+            <label class="mdl-textfield__label" for="certificate">Certificate</label>
+        </div>
+        <button id="import-btn"
+            class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--colored">
+            Import
+        </button>
+
+        <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+            <textarea class="mdl-textfield__input" type="text" cols="40" rows="2" id="url"></textarea>
+            <label class="mdl-textfield__label" for="url">MQTT Server URL</label>
+        </div>
+        <button id="url-submit-btn"
+            class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--colored">
+            Import
+        </button>
+
+        <div id="snackbar" class="snackbar">Status Message</div>
+        <script>
+
+            function showSnackbar(message) {
+                $("#snackbar").text(message).addClass("show");
+                setTimeout(function () {
+                    $("#snackbar").removeClass("show");
+                }, 5000);
+            }
+
+            const formatPemString = (pem) => {
+                const header = "-----BEGIN CERTIFICATE REQUEST-----";
+                const footer = "-----END CERTIFICATE REQUEST-----";
+                const base64Content = pem.replace(header, "").replace(footer, "").trim();
+                const formattedContent = base64Content.match(/.{1,64}/g).join("\n");
+
+                return `${header}\n${formattedContent}\n${footer}`;
+            }
+
+            $(document).ready(function () {
+
+                $('#import-btn').prop('disabled', true);
+                $('#url-submit-btn').prop('disabled', true);
+                var hostUrl = window.location.origin;
+                var postUrl = hostUrl + '/req';
+                $("#generate-btn").click(function () {
+                    var gpostData = {
+                        command: 'GetPublicKey',
+                        data: '0',
+                    };
+                    $.ajax({
+                        type: 'POST',
+                        url: postUrl,
+                        data: JSON.stringify(gpostData),
+                        contentType: 'application/json',
+                        dataType: 'json',
+                        success: function (response) {
+                            try {
+                                var result = JSON.parse(JSON.stringify(response));
+                            } catch (e) {
+                                console.error('failed to parse response');
+                                console.error('error:', e);
+                                showSnackbar("Failed to generate Certificate Request.");
+                            }
+                            $("#public-key").text(formatPemString(result['result']));
+                            $('#generate-btn').prop('disabled', true); // disable button
+                            $('#import-btn').prop('disabled', false);// enable button
+
+                        },
+                        error: function (jqXHR, textStatus, errorThrown) {
+                            console.error('failed to request to server');
+                            console.error('error:', textStatus, errorThrown);
+                            showSnackbar("Failed to generate Certificate Request.");
+                        }
+                    });
+                    showSnackbar("Generated Certificate Request. Please import the signed certificate.");
+                });
+
+                $("#import-btn").click(function () {
+                    var cpostData = {
+                        command: 'PutCertificate',
+                        data: $("#certificate").val(),
+                    };
+                    var status;
+                    console.log(cpostData.data);
+                    $.ajax({
+                        type: 'POST',
+                        url: postUrl,
+                        data: JSON.stringify(cpostData),
+                        contentType: 'application/json',
+                        dataType: 'json',
+                        success: function (response) {
+                            try {
+                                var result = JSON.parse(JSON.stringify(response));
+                                var status = result['result'].toString();
+                                console.log(status);
+
+                                // result check
+                                if (status == 'OK') {
+                                    $('#import-btn').prop('disabled', true);
+                                    $('#url-submit-btn').prop('disabled', false);
+                                    showSnackbar("Certificate Imported.");
+                                } else {
+                                    showSnackbar("Failed to import certificate.");
+                                }
+                            } catch (e) {
+                                console.error('failed to parse response');
+                                console.error('error:', e);
+                                showSnackbar("Failed to import certificate.");
+                            }
+                        },
+                        error: function (jqXHR, textStatus, errorThrown) {
+                            console.error('failed to request to server');
+                            console.error('error:', textStatus, errorThrown);
+                            showSnackbar("Failed to import certificate.");
+                        }
+                    });
+                });
+
+                $("#url-submit-btn").click(function () {
+                    var gpostData = {
+                        command: 'UrlSubmit',
+                        data: $("#url").val(),
+                    };
+                    $.ajax({
+                        type: 'POST',
+                        url: postUrl,
+                        data: JSON.stringify(gpostData),
+                        contentType: 'application/json',
+                        dataType: 'json',
+                        success: function (response) {
+                            try {
+                                var result = JSON.parse(JSON.stringify(response));
+                                var status = result['result'].toString();
+                                console.log(status);
+
+                                // result check
+                                if (status == 'OK') {
+                                    $('#url-submit-btn').prop('disabled', true);
+                                    showSnackbar("All settings are completed. please operate the device and test MQTT.");
+                                } else {
+                                    showSnackbar("Failed to import URL.");
+                                }
+                            } catch (e) {
+                                console.error('failed to parse response');
+                                console.error('error:', e);
+                                showSnackbar("Failed to import URL.");
+                            }
+                        },
+                        error: function (jqXHR, textStatus, errorThrown) {
+                            console.error('failed to request to server');
+                            console.error('error:', textStatus, errorThrown);
+                            showSnackbar("Failed to import URL.");
+                        }
+                    });
+                });
+
+
+
+            });
+
+        </script>
+    </div>
+    <br />
+</body>
+
+</html>
