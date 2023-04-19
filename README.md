@@ -25,7 +25,7 @@ sample policy includes as JITRPolicy
 3. Install the app on your Android device
 
 ### How to use
-1. Launch the app
+1. Launch the app. prepare port forward by command adb forward tcp:8080 tcp:8080
 2. Provision the device to access AWS IoT using WEB UI provided by the app
 3. Connect to AWS IoT using the provisioned credentials by clicking the Connect button
 4. Publish a message to the topic by clicking the Publish button
